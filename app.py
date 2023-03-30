@@ -12,39 +12,37 @@ def init():
     device = "cuda" if torch.cuda.is_available() else "cpu"
     model = whisper.load_model("medium", device=device)
 
+
+def callback(projectId, result):
+    url = 'https://scribewave.com/api/whisper/banana/callback'
+    headers = {'Content-type': 'application/json'}
+    data = {
+        "projectId": projectId,
+        "transcribeResult": result,
+        "secret": "curieuze5neuze8mosterdpot33"
+    }
+    response = requests.post(url, json=data, headers=headers)
+    print(response.json())
+
 # Inference is ran for every server call
 # Reference your preloaded global model variable here.
 def inference(model_inputs:dict) -> dict:
     global model
 
     # Parse out your arguments
-    prompt = model_inputs.get('prompt', None)
-    if prompt == None:
-        return {'message': "No prompt provided"}
-    
+    url = model_inputs.get('url', None)
+    projectId = model_inputs.get('projectId', None)
+    if url == None:
+        return {'message': "No url provided"}
+
     # Run the model
-    audio = whisper.load_audio(prompt["url"])
+    audio = whisper.load_audio(url)
     result = whisper.transcribe(model, audio)
 
     # HTTP callback to api to confirm result
-    response = callback(result)
+    if projectId != None:
+        callback(projectId, result)
 
     # Return the results as a dictionary
     return result
 
-
-def callback(result: dict):
-    # HTTP callback to api to confirm result
-    # define the URL to send the request to
-    url = "http://localhost:3000/api/testEmail"
-
-    # convert the data to JSON format
-    json_result = json.dumps(result)
-
-    # define the headers for the request
-    headers = {"Content-Type": "application/json"}
-
-    # send the POST request with the JSON payload
-    response = requests.post(url, data=json_result, headers=headers)
-    
-    return response
